@@ -1,0 +1,98 @@
+﻿@using Microsoft.AspNet.Identity
+@using Microsoft.AspNet.Identity.EntityFramework
+@using Microsoft.Owin.Security
+
+@* Remove this section if you are using bundling *@
+@section Scripts {
+    <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+}
+
+@{
+    Page.Title = "Log in";
+
+    // Initialize general page variables
+    var userName = "";
+    var password = "";
+
+    var returnUrl = Request.QueryString["ReturnUrl"];
+    if (returnUrl.IsEmpty()) {
+        // Go to home page when done if no return url provided
+        returnUrl = Href("~/");
+    }
+
+    // Setup validation
+    Validation.RequireField("userName", "You must specify an userName address.");
+    Validation.RequireField("password", "You must specify a password.");
+    Validation.Add("password",
+        Validator.StringLength(
+            maxLength: Int32.MaxValue,
+            minLength: 6,
+            errorMessage: "Password must be at least 6 characters"));
+
+    // If this is a POST request, validate and process data
+    if (IsPost) {
+        AntiForgery.Validate();
+
+        if (Validation.IsValid()) {
+            userName = Request.Form["userName"];
+            password = Request.Form["password"];
+            
+            var userStore = new UserStore<IdentityUser>();
+            var userManager = new UserManager<IdentityUser>(userStore);
+            var user = userManager.Find(userName, password);
+
+            if (user != null)
+            {
+                var authenticationManager = HttpContext.Current.GetOwinContext().Authentication;
+                var userIdentity = userManager.CreateIdentity(user, DefaultAuthenticationTypes.ApplicationCookie);
+
+                authenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = false }, userIdentity);
+                Context.RedirectLocal(returnUrl);
+            } else {
+                ModelState.AddFormError("The user name or password provided is incorrect.");
+            }
+
+        }// else if isvalid
+
+    } // if ispost
+
+  } 
+
+        <hgroup class="title">
+            <h1>@Page.Title.</h1>
+        </hgroup>
+
+        <section id="loginForm">
+            <h2>Use a local account to log in.</h2>
+            <form method="post">
+                @AntiForgery.GetHtml()
+                @* If one or more validation errors exist, show an error *@
+                @Html.ValidationSummary("Log in was unsuccessful. Please correct the errors and try again.", excludeFieldErrors: true, htmlAttributes: null)
+
+                <fieldset>
+                    <legend>Log in to Your Account</legend>
+                    <ol>
+                        <li class="userName">
+                            <label for="userName" @if (!ModelState.IsValidField("userName"))
+                                   {<text>class="error-label"</text>}>User name</label>
+                            <input type="text" id="userName" name="userName" value="@userName" @Validation.For("userName") />
+                            @* Write any user name validation errors to the page *@
+                            @Html.ValidationMessage("userName")
+                        </li>
+                        <li class="password">
+                            <label for="password" @if (!ModelState.IsValidField("password")) {<text>class="error-label"</text>}>Password</label>
+                            <input type="password" id="password" name="password" @Validation.For("password") />
+                            @* Write any password validation errors to the page *@
+                            @Html.ValidationMessage("password")
+                        </li>
+                    </ol>
+                    <input type="submit" value="Log in" />
+                </fieldset>
+            </form>
+            <p>
+                <a href="~/Account/Register">Don't have an Account?</a>
+                <a href="~/Account/ForgotPassword">Did you forget your password?</a>
+            </p>
+        </section>
+

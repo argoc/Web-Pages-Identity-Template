@@ -1,0 +1,175 @@
+﻿@using Microsoft.AspNet.Identity
+@using Microsoft.AspNet.Identity.EntityFramework
+@using Microsoft.Owin.Security
+
+@* Remove this section if you are using bundling *@
+@section Scripts {
+    <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+    @* <script src='https://www.google.com/recaptcha/api.js'></script> *@
+}
+@* Uncomment if using reCAPTCHA
+    @using System.Net;
+    @using Newtonsoft.Json;
+    // need to define this class in a .cs file:
+    //
+    // public class CaptchaResponse {
+    //    [JsonProperty("success")]
+    //    public bool Success { get; set; }
+    //
+    //    [JsonProperty("error-codes")]
+    //    public List<string> ErrorCodes { get; set; }
+    // }
+    //
+    @functions {
+        public bool ValidateCaptcha() {
+            var response = Request["g-recaptcha-response"];
+            //secret that was generated in key value pair on reCAPTCHA.net
+            const string secret = "YOUR KEY VALUE PAIR";
+
+            var client = new WebClient();
+            var reply =
+                client.DownloadString(
+                    string.Format("https://www.google.com/recaptcha/api/siteverify?secret={0}&response={1}", secret, response));
+
+            var captchaResponse = JsonConvert.DeserializeObject<CaptchaResponse>(reply);
+
+            // look in captchaResponse.ErrorCodes for details about the failure
+            return captchaResponse.Success.AsBool();
+        }
+    }
+*@
+
+@{
+    Page.Title = "Register";
+
+    // Initialize general page variables
+    var userName = "";
+    var email = "";
+    var password = "";
+    var confirmPassword = "";
+
+    // Setup validation
+    Validation.RequireField("userName", "You must specify a user name.");
+    Validation.RequireField("email", "Email address cannot be blank.");
+    Validation.RequireField("password", "Password cannot be blank.");
+    Validation.Add("confirmPassword",
+        Validator.EqualsTo("password", "Password and confirmation password do not match."));
+    Validation.Add("password",
+        Validator.StringLength(
+            maxLength: Int32.MaxValue,
+            minLength: 6,
+            errorMessage: "Password must be at least 6 characters"));
+
+    // If this is a POST request, validate and process data
+    if (IsPost) {
+        AntiForgery.Validate();
+        userName = Request.Form["userName"];
+        email = Request.Form["email"];
+        password = Request.Form["password"];
+        confirmPassword = Request.Form["confirmPassword"];
+
+        // Validate the user's captcha answer as described on reCAPTCHA.net
+        // see http://venkatbaggu.com/google-recaptcha-asp-net-mvc/ for a MVC solution
+        // if (!ValidateCaptcha()) { 
+        //   ModelState.AddFormError("reCaptcha failure, try again.");
+        // }
+
+        // If all information is valid, create a new account
+        if (Validation.IsValid()) {
+            var userStore = new UserStore<IdentityUser>();
+            var manager = new UserManager<IdentityUser>(userStore);
+
+            // configure passwords allowed on server
+            manager.PasswordValidator = new PasswordValidator
+            {
+                RequireDigit = false,
+                RequiredLength = 6,
+                RequireLowercase = false,
+                RequireNonLetterOrDigit = false,
+                RequireUppercase = false
+            };
+
+            var user = new IdentityUser()
+            {
+                UserName = userName, Email = email
+            };
+
+            try
+            {
+                var result = manager.Create(user, password);
+
+                if (result.Succeeded)
+                {
+                    // could log in now or redirect to login page.
+                    // var authenticationManager = HttpContext.Current.GetOwinContext().Authentication;
+                    // var userIdentity = manager.CreateIdentity(user, DefaultAuthenticationTypes.ApplicationCookie);
+                    // authenticationManager.SignIn(new AuthenticationProperties() { }, userIdentity);
+                    Response.Redirect("~/Account/Login");
+                }
+                else
+                {
+                    // User already exists
+                    ModelState.AddFormError("User name is already in use.");
+                }
+            } catch (Exception e)
+            {
+                // User already exists; could be another issue, but...
+                ModelState.AddFormError("User name is already in use.");
+            }
+        }
+    }
+}
+
+<hgroup class="title">
+    <h1>@Page.Title.</h1>
+    <h2>Create a new account.</h2>
+</hgroup>
+
+<form method="post">
+    @AntiForgery.GetHtml()
+    @* If at least one validation error exists, notify the user *@
+    @Html.ValidationSummary("Account creation was unsuccessful. Please correct the errors and try again.", excludeFieldErrors: true, htmlAttributes: null)
+
+    <fieldset>
+        <legend>Registration Form</legend>
+        <ol>
+            <li class="userName">
+                <label for="userName" @if(!ModelState.IsValidField("userName")){<text>class="error-label"</text>}>User Name</label>
+                <input type="text" id="userName" name="userName" value="@userName" @Validation.For("userName") />
+                @* Write any userName validation errors to the page *@
+                @Html.ValidationMessage("userName")
+            </li>
+            <li class="email">
+                <label for="email" @if (!ModelState.IsValidField("email")) { <text> class="error-label" </text> }>Email</label>
+                <input type="text" id="email" name="email" value="@email" @Validation.For("email") />
+                @* Write any email validation errors to the page *@
+                @Html.ValidationMessage("email")
+            </li>
+            <li class="password">
+                <label for="password" @if(!ModelState.IsValidField("password")) {<text>class="error-label"</text>}>Password</label>
+                <input type="password" id="password" name="password" @Validation.For("password") />
+                @* Write any password validation errors to the page *@
+                @Html.ValidationMessage("password")
+            </li>
+            <li class="confirm-password">
+                <label for="confirmPassword" @if(!ModelState.IsValidField("confirmPassword")) {<text>class="error-label"</text>}>Confirm password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" @Validation.For("confirmPassword") />
+                @* Write any password validation errors to the page *@
+                @Html.ValidationMessage("confirmPassword")
+            </li>
+            <li class="recaptcha">
+                <div class="message-info">
+                    <p>
+                        Register for reCAPTCHA keys and get information about how to add
+                        reCAPTCHA to your page at <a href="http://recaptcha.net">reCAPTCHA.net</a>.
+                    </p>
+                </div>
+                @* Replace the previous div with this one for reCAPTCHA support
+                <div class="g-recaptcha" data-sitekey="SITEKEY"></div>
+                *@
+            </li>
+        </ol>
+        <input type="submit" value="Register" />
+    </fieldset>
+</form>

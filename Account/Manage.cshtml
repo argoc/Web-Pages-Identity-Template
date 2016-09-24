@@ -1,0 +1,158 @@
+﻿@using Microsoft.AspNet.Identity
+@using Microsoft.AspNet.Identity.EntityFramework
+@using Microsoft.Owin.Security
+
+@* Remove this section if you are using bundling *@
+@section Scripts {
+    <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+}
+
+@{
+    Page.Title = "Manage Account";
+
+    var action = Request.Form["action"];
+
+    if (User.Identity.IsAuthenticated)
+    {
+
+        // Setup validation
+        Validation.RequireField("currentPassword", "The current password field is required.");
+        Validation.Add("currentPassword",
+            Validator.StringLength(
+                maxLength: Int32.MaxValue,
+                minLength: 6,
+                errorMessage: "Current password must be at least 6 characters"));
+        Validation.RequireField("newPassword", "The new password field is required.");
+        Validation.Add("confirmPassword",
+            Validator.Required("The confirm new password field is required."),
+            Validator.EqualsTo("newPassword", "The new password and confirmation password do not match."));
+        Validation.Add("newPassword",
+            Validator.StringLength(
+                maxLength: Int32.MaxValue,
+                minLength: 6,
+                errorMessage: "New password must be at least 6 characters"));
+
+        if (IsPost)
+        {
+            var currentPassword = Request.Form["currentPassword"];
+            var newPassword = Request.Form["newPassword"];
+            var confirmPassword = Request.Form["confirmPassword"];
+
+            AntiForgery.Validate();
+            if (action == "password")
+            {
+                // Handle local account password operations
+                if (Validation.IsValid())
+                {
+                    var userStore = new UserStore<IdentityUser>();
+                    var userManager = new UserManager<IdentityUser>(userStore);
+                    var userId = User.Identity.GetUserId();
+                    var result =  userManager.ChangePassword(userId, currentPassword, newPassword);
+                    if (result.Succeeded)
+                    {
+                        var authenticationManager = HttpContext.Current.GetOwinContext().Authentication;
+                        authenticationManager.SignOut();
+                        Response.Redirect("~/Account/Login");
+                    }
+                    else
+                    {
+                        ModelState.AddFormError("An error occurred when attempting to change the password. Please contact the site owner.");
+                    }
+
+                }
+                else
+                {
+                    ModelState.AddFormError("Password change was unsuccessful. Please correct the errors and try again.");
+                }
+            }
+            else if (action == "removeAccount")
+            {
+                Validation.Add("newPassword",
+                     Validator.EqualsTo("currentPassword", "The new password and current password do not match."));
+
+                if (Validation.IsValid())
+                {
+                    var userStore = new UserStore<IdentityUser>();
+                    var userManager = new UserManager<IdentityUser>(userStore);
+                    var user = userManager.Find(User.Identity.Name, currentPassword);
+                    // only delete if password is correct
+                    if (user!=null)
+                    {
+                        var logins = user.Logins; // external logins
+                        var rolesForUser = userManager.GetRoles(User.Identity.GetUserId());
+
+                        foreach (var login in logins.ToList())
+                        {
+                            userManager.RemoveLogin(login.UserId, new UserLoginInfo(login.LoginProvider, login.ProviderKey));
+                        }
+                        if (rolesForUser.Count() > 0)
+                        {
+                            foreach (var item in rolesForUser.ToList())
+                            {
+                                // item should be the name of the role
+                                var result = userManager.RemoveFromRole(user.Id, item);
+                            }
+                        }
+                        // Log out of the current user context
+                        var authenticationManager = HttpContext.Current.GetOwinContext().Authentication;
+                        authenticationManager.SignOut();
+                        userManager.Delete(user);
+                        Response.Redirect("~/Account/Login");
+                    }
+                    else
+                    {
+                        ModelState.AddFormError("The password provided is incorrect.");
+                    }
+                } else { ModelState.AddFormError("The password provided is incorrect."); }
+
+            } // removeAccount
+        } // ispost
+    } // isauthenticated
+    else
+    {
+        Response.Redirect("~/Account/Login");
+    }
+  } 
+
+<hgroup class="title">
+    <h1>@Page.Title.</h1>
+</hgroup>
+
+<p>You're logged in as <strong>@User.Identity.GetUserName()</strong>.</p>
+
+<p>Enter a new password to change your password. Enter the same password in all fields to delete your account.</p>
+
+<form method="post">
+    @AntiForgery.GetHtml()
+    @Html.ValidationSummary(excludeFieldErrors: true)
+
+    <fieldset>
+        <legend>Change Password Form</legend>
+        <ol>
+                <li class="current-password">
+                    <label for="currentPassword" @if (!ModelState.IsValidField("currentPassword")) {<text>class="error-label"</text>}>Current password</label>
+                    <input type="password" id="currentPassword" name="currentPassword" @Validation.For("currentPassword")/>
+                    @Html.ValidationMessage("currentPassword")
+                </li> 
+            <li class="new-password">
+                <label for="newPassword" @if (!ModelState.IsValidField("newPassword")) {<text>class="error-label"</text>}>New password</label>
+                <input type="password" id="newPassword" name="newPassword" @Validation.For("newPassword")/>
+                @Html.ValidationMessage("newPassword")
+            </li>
+            <li class="confirm-password">
+                <label for="confirmPassword" @if (!ModelState.IsValidField("confirmPassword")) {<text>class="error-label"</text>}>Confirm new password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" @Validation.For("confirmPassword")/>
+                @Html.ValidationMessage("confirmPassword")
+            </li>
+        </ol>
+
+        <button type="submit" name="action" value="password">Change Password</button>
+        <p>
+            Click <a href="~/Account/ForgotPassword" title="Forgot password page">here</a> if you've forgotten your password.
+        </p>
+        <p><button type="submit" name="action" value="removeAccount">Remove Account</button></p>
+
+    </fieldset>
+</form>
+
