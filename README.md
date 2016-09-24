@@ -8,6 +8,12 @@ This is v1.1
 Visual Studio 2015 Web Pages with Identity Starter Site Release Notes v1.1
 24 Sept 2016
 
+## To Install
+Download the .zip from this github repo and place it in your Visual Studio 2015\Templates\ProjectTemplates\ folder *as a zip file*.
+It will show up under the C# templates, not the Web ones (it takes VSIX/VS Gallery to get it to move into a subcategory).
+
+## Troubleshooting
+
 If you are having issues with the users "already existing" try stopping and deleting the MS SQL Server daemon.
 In a cmd window:
 cd "C:\Program Files\Microsoft SQL Server\110\Tools\Binn"
