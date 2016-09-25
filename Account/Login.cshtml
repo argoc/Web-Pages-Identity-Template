@@ -37,22 +37,28 @@
         if (Validation.IsValid()) {
             userName = Request.Form["userName"];
             password = Request.Form["password"];
-            
+
             var userStore = new UserStore<IdentityUser>();
             var userManager = new UserManager<IdentityUser>(userStore);
-            var user = userManager.Find(userName, password);
+            try {
+                var user = userManager.Find(userName, password);
 
-            if (user != null)
-            {
-                var authenticationManager = HttpContext.Current.GetOwinContext().Authentication;
-                var userIdentity = userManager.CreateIdentity(user, DefaultAuthenticationTypes.ApplicationCookie);
+                if (user != null)
+                {
+                    var authenticationManager = HttpContext.Current.GetOwinContext().Authentication;
+                    var userIdentity = userManager.CreateIdentity(user, DefaultAuthenticationTypes.ApplicationCookie);
 
-                authenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = false }, userIdentity);
-                Context.RedirectLocal(returnUrl);
-            } else {
-                ModelState.AddFormError("The user name or password provided is incorrect.");
+                    authenticationManager.SignIn(new AuthenticationProperties() { IsPersistent = false }, userIdentity);
+                    Context.RedirectLocal(returnUrl);
+                } else {
+                    ModelState.AddFormError("The user name or password provided is incorrect.");
+                }
             }
-
+            catch (Exception e)
+            {
+                // issue is more serious...
+                ModelState.AddFormError("Login issue, contact site administrator.");
+            }
         }// else if isvalid
 
     } // if ispost

@@ -109,13 +109,15 @@
                 }
                 else
                 {
-                    // User already exists
-                    ModelState.AddFormError("User name is already in use.");
+                    foreach (var error in result.Errors) {
+                        // find out what Identity thought went wrong...
+                        ModelState.AddFormError(error);
+                    }
                 }
             } catch (Exception e)
             {
-                // User already exists; could be another issue, but...
-                ModelState.AddFormError("User name is already in use.");
+                // issue is more serious...
+                ModelState.AddFormError("Could not register user, contact site administrator.");
             }
         }
     }
