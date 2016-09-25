@@ -9,8 +9,11 @@ Visual Studio 2015 Web Pages with Identity Starter Site Release Notes v1.1
 24 Sept 2016
 
 ## To Install
-Download the .zip from this github repo and place it in your Visual Studio 2015\Templates\ProjectTemplates\ folder *as a zip file*.
-It will show up under the C# templates, not the Web ones (it takes VSIX/VS Gallery to get it to move into a subcategory).
+Download the .zip from this github repo. Remove the top-level directory it adds (so all the files and directories in it are now at the top level) and place it in your Visual Studio 2015\Templates\ProjectTemplates\ folder *as a zip file*.
+
+It will show up under the C# templates, not the Web ones (it takes VSIX/VS Gallery to get it to move into a subcategory), as
+ASP.NET Web Pages with Identity (v1.1).
+
 
 ## Troubleshooting
 
