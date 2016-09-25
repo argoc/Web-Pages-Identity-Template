@@ -20,9 +20,9 @@ ASP.NET Web Pages with Identity (v1.1).
 If you get an error asking you to contact the site administrator when trying to register a user or login,
 try stopping and deleting the MS SQL Server daemon. In a cmd window:
 
-    cd "C:\Program Files\Microsoft SQL Server\110\Tools\Binn"
-    sqllocaldb.exe stop mssqllocaldb
-    sqllocaldb.exe delete mssqllocaldb
+    cd "C:\Program Files\Microsoft SQL Server\130\Tools\Binn"
+    sqllocaldb stop mssqllocaldb
+    sqllocaldb delete mssqllocaldb
 
 If the error persists, check that you have an App_Data directory in your project and it is not read-only.
 
