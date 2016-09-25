@@ -17,13 +17,17 @@ ASP.NET Web Pages with Identity (v1.1).
 
 ## Troubleshooting
 
-If you are having issues with the users "already existing" try stopping and deleting the MS SQL Server daemon.
-In a cmd window:
-cd "C:\Program Files\Microsoft SQL Server\110\Tools\Binn"
-sqllocaldb.exe stop mssqllocaldb
-sqllocaldb.exe delete mssqllocaldb
+If you get an error asking you to contact the site administrator when trying to register a user or login,
+try stopping and deleting the MS SQL Server daemon. In a cmd window:
 
-If you get an error with user creation, check that App_Data exists and is not read only.
+    cd "C:\Program Files\Microsoft SQL Server\110\Tools\Binn"
+    sqllocaldb.exe stop mssqllocaldb
+    sqllocaldb.exe delete mssqllocaldb
+
+If the error persists, check that you have an App_Data directory in your project and it is not read-only.
+
+If the error _still_ persists, you will need to set a breakpoint in Account\Register.cshtml or Account\Login.cshtml
+in the catch block found in its code and see what the actual exception is when it occurs (the error message is masking the exception).
 
 If you are having IIS duplicate port issues, right-click the project in VS Solution Explorer,
 go to its Web screen, and create a new virtual directory with a different port #.
