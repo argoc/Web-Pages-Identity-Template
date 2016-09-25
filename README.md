@@ -4,7 +4,6 @@ Starter Site for Web Pages with Identity rather than Membership (for use in Visu
 
 V1.0 Published in VS Gallery, at https://visualstudiogallery.msdn.microsoft.com/f3ce48ce-a059-40b8-9284-b8b63386a6a4. You can access this template directly within Visual Studio, search online for "Identity,razor".
 
-This is v1.1
 Visual Studio 2015 Web Pages with Identity Starter Site Release Notes v1.1
 25 Sept 2016
 
